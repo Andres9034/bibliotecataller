@@ -1,0 +1,14 @@
+{
+  "name": "ms-resenas",
+  "version": "1.0.0",
+  "description": "Biblioteca Cloud Native - ms-resenas",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.3.0",
+    "mongodb": "^7.9.0"
+  }
+}

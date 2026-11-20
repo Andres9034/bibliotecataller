@@ -1,0 +1,58 @@
+# Biblioteca Cloud Native - UN microservicio (ms-libros) + Oracle Autonomous DB (API MongoDB) + API Gateway + Frontend
+# build: construye la imagen localmente | image: nombre con el que se publica en Docker Hub
+# Variables (usuario de Docker Hub, Firebase) vienen del archivo .env (no se sube a GitHub)
+name: biblioteca
+
+services:
+  # MongoDB LOCAL (opcional). Solo arranca con: docker compose --profile local up -d
+  # Por defecto la BD es Oracle Autonomous Database (API MongoDB) definida en MONGO_URI del .env
+  mongo:
+    image: mongo:7
+    profiles: ["local"]
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      retries: 10
+
+  # >>> MI MICROSERVICIO <<<
+  ms-libros:
+    build: ./ms-libros
+    image: ${DOCKERHUB_USER}/biblioteca-ms-libros:1.0
+    environment:
+      PORT: 8001
+      MONGO_URI: ${MONGO_URI}
+      MONGO_DB: ${MONGO_DB}
+    restart: unless-stopped
+
+  # API Gateway: valida el token de Firebase y enruta a ms-libros
+  gateway:
+    build: ./gateway
+    image: ${DOCKERHUB_USER}/biblioteca-gateway:1.0
+    environment:
+      PORT: 8080
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      CORS_ORIGINS: http://localhost:8088
+      LIBROS_URL: http://ms-libros:8001
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  # Frontend web (login con Firebase)
+  frontend:
+    build: ./frontend
+    image: ${DOCKERHUB_USER}/biblioteca-frontend:1.0
+    environment:
+      API_URL: http://localhost:8080/api
+      FIREBASE_API_KEY: ${FIREBASE_API_KEY}
+      FIREBASE_AUTH_DOMAIN: ${FIREBASE_AUTH_DOMAIN}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+    ports:
+      - "8088:80"
+    depends_on:
+      - gateway
+    restart: unless-stopped
+
+volumes:
+  mongo-data:

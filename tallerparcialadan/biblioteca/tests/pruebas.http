@@ -1,0 +1,32 @@
+### Pruebas con la extensión REST Client de VS Code ("Send Request")
+@gw = http://localhost:8080
+# Inicia sesión en http://localhost:8088, clic en "Copiar mi token" y pégalo aquí (dura 1 hora)
+@token = PEGA_AQUI_EL_TOKEN
+
+### 1. Salud (público)
+GET {{gw}}/health
+
+### 2. NO autorizado: sin token -> 401
+GET {{gw}}/api/libros
+
+### 3. NO autorizado: token falso -> 401
+GET {{gw}}/api/libros
+Authorization: Bearer token-falso
+
+### 4. Autorizado: listar libros -> 200
+GET {{gw}}/api/libros
+Authorization: Bearer {{token}}
+
+### 5. Registrar libro -> 201
+POST {{gw}}/api/libros
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "titulo": "Cien años de soledad", "autor": "Gabriel García Márquez", "anio": 1967 }
+
+### 6. Validación: falta el autor -> 400
+POST {{gw}}/api/libros
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "titulo": "Sin autor" }
